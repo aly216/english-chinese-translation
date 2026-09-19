@@ -17,25 +17,28 @@
 
 ```
 英译中项目/
-├── train.py                 # 训练入口
-├── predict.py               # 推理入口
-├── config.py                # 常量、超参数、路径
+├── train.py                 # 训练入口：调用 training.trainer 的 train_seq2seq()
+├── predict.py               # 推理入口：调用 evaluation.predict 的 dm_test_seq2seq()
+├── ablation.py              # 消融实验：有注意力 vs 无注意力 对比训练 + 损失曲线 + 翻译样例对比
+├── visualize.py             # 注意力可视化：绘制「英文词 ↔ 中文字符」注意力热力图
+├── config.py                # 常量（SOS/EOS/MAX_LENGTH）、超参数（学习率/轮数/教师强制比）、设备与权重路径
+├── requirements.txt         # 依赖清单（PyTorch、matplotlib、tqdm）
 ├── data_utils/
-│   ├── preprocess.py        # 英文清洗 + 中文逐字切分 + 词表构建
-│   └── dataset.py           # 数据集与 DataLoader
+│   ├── preprocess.py        # 数据清洗（英文小写+标点、中文去空白）+ 逐字切分 + 构建词表
+│   └── dataset.py           # MyPairsDataset 数据集 + get_dataloader 加载器（batch_size=1）
 ├── models/
-│   ├── encoder.py           # GRU 编码器
-│   ├── decoder.py           # 基础 GRU 解码器（无注意力）
-│   └── attention_decoder.py # 带注意力的解码器
+│   ├── encoder.py           # EncoderRNN：Embedding + GRU 编码器，输出序列特征与最终隐藏状态
+│   ├── decoder.py           # DecoderRNN：无注意力的基础 GRU 解码器（消融对比用）
+│   └── attention_decoder.py # AttentionDecoderRNN：带注意力机制的 GRU 解码器
 ├── training/
-│   └── trainer.py           # 训练循环
+│   └── trainer.py           # 训练循环：train_iters 单步训练（教师强制）+ train_seq2seq 主循环
 ├── evaluation/
-│   └── predict.py           # 推理 / 评估
+│   └── predict.py           # evaluate_seq2seq 贪心解码 + dm_test_seq2seq 样例推理
 ├── data/
-│   ├── cmn-eng_10000.txt    # 处理好的 10000 句对
-│   └── raw/cmn.txt          # 原始语料（未提交）
-├── checkpoints/             # 模型权重（.pth，不提交）
-└── img/                     # 损失曲线图
+│   ├── cmn-eng_10000.txt    # 处理好的 10000 句中英平行句对（英文\t中文）
+│   └── raw/                 # 原始语料（未提交）
+├── checkpoints/             # 模型权重 .pth（不提交，train.py 可重新生成）
+└── img/                     # 损失曲线图（plot_loss_*）+ 注意力热力图（attention_*）
 ```
 
 ## 数据
@@ -77,6 +80,26 @@ python predict.py
 默认加载 `checkpoints/` 下第 5 个 epoch 的权重，对内置示例句子做英译中并打印结果。
 
 > 注意：`checkpoints/` 已被 `.gitignore` 忽略，克隆后需先运行 `train.py` 生成权重，再运行 `predict.py`。
+
+## 训练结果
+
+### 损失曲线
+
+「有注意力」vs「无注意力」两种模型在同一份数据上的训练损失对比：
+
+![有注意力 vs 无注意力 训练损失对比](img/ablation_loss.png)
+
+各 epoch 的损失曲线见 `img/plot_loss_*.png`。
+
+### 注意力可视化
+
+带注意力解码器在生成每个中文字符时，对输入英文单词的注意力权重热力图（颜色越亮表示越关注）：
+
+| i am a student | i love you |
+| --- | --- |
+| ![i am a student](img/attention_1.png) | ![i love you](img/attention_2.png) |
+
+> 由 `visualize.py` 生成，展示「生成中文字符 ↔ 输入英文单词」的对齐关系。
 
 ## 配置
 
