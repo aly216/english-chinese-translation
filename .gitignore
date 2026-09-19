@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# 训练权重（不提交，train.py 可重新生成）
+checkpoints/*.pth
+
+# 原始语料（较大，不提交；data/cmn-eng_10000.txt 已处理好）
+data/raw/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
